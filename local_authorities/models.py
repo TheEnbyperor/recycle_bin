@@ -5,6 +5,12 @@ import products.models
 class Authority(models.Model):
     name = models.CharField(max_length=255)
 
+    class Meta:
+        verbose_name_plural = "Authorities"
+
+    def __str__(self):
+        return self.name
+
 
 class Bin(models.Model):
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE)
