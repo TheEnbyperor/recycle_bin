@@ -1,0 +1,24 @@
+#BottomBar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+
+  height: 80px;
+
+  background: #2196f3;
+
+  display: flex;
+  flex-direction: column;
+
+  .wifi {
+    align-self: flex-start;
+    flex-grow: 0;
+    flex-shrink: 0;
+    text-align: left;
+  }
+
+  .time {
+    align-self: flex-end;
+  }
+}
