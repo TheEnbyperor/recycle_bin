@@ -1,0 +1,31 @@
+import React, {Component} from 'react';
+
+import './FrontPage.scss';
+import ScanBarcode from "./ScanBarcode/ScanBarcode";
+
+export default class FrontPage extends Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            mode: null
+        }
+    }
+
+    render() {
+        if (this.state.mode === null) {
+            return <div id="FrontPage">
+                <div onClick={() => this.setState({mode: 1})}>
+                    <i className="fas fa-barcode"/>
+                    <p>Scan barcode</p>
+                </div>
+                <div>
+                    <i className="fas fa-search"/>
+                    <p>Search manually</p>
+                </div>
+            </div>;
+        } else if (this.state.mode === 1) {
+            return <ScanBarcode/>
+        }
+    }
+}

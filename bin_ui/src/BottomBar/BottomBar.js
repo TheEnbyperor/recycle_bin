@@ -6,7 +6,7 @@ export default class BottomBar extends Component {
     render() {
         return (
             <div id="BottomBar">
-                <i className="material-icons md-48 wifi">&#xE1D8;</i>
+                <img className="wifi" src="/material-design-icons/device/svg/production/ic_signal_wifi_3_bar_48px.svg" alt=""/>
                 <span className="time">12:46 PM</span>
             </div>
         );

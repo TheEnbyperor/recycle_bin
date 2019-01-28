@@ -1,0 +1,21 @@
+#ScanBarcode {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  align-items: center;
+
+  position: absolute;
+  top: 0;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+
+  #interactive.viewport {
+    position: relative;
+    height: 100%;
+
+    canvas, video {
+      position: absolute;
+    }
+  }
+
+}

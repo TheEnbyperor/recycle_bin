@@ -1,0 +1,25 @@
+#FrontPage {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  align-items: center;
+
+  position: absolute;
+  top: 0;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+
+  > div {
+    svg {
+      height: 150px;
+      width: 150px;
+      display: block;
+      margin: 0 auto;
+    }
+
+    p {
+      font-size: 48px;
+      text-align: center;
+    }
+  }
+}
