@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import Quagga from 'quagga';
 
 import './ScanBarcode.scss';
 
@@ -11,66 +10,77 @@ export default class ScanBarcode extends Component {
     }
 
     componentDidMount() {
-        Quagga.init({
-             inputStream: {
-                type : "LiveStream",
-                constraints: {
-                    width: {min: 640},
-                    height: {min: 480},
-                    facingMode: "environment",
-                    aspectRatio: {min: 1, max: 2}
-                }
-            },
-            locator: {
-                patchSize: "medium",
-                halfSample: true
-            },
-            numOfWorkers: 2,
-            frequency: 10,
-            decoder: {
-                readers : [{
-                    format: "ean_reader",
-                    config: {}
-                }]
-            },
-            locate: true
-          }, function(err) {
-              if (err) {
-                  console.log(err);
-                  return
-              }
-              console.log("Initialization finished. Ready to start");
-              Quagga.start();
-          });
-         Quagga.onProcessed(function(result) {
-        var drawingCtx = Quagga.canvas.ctx.overlay,
-            drawingCanvas = Quagga.canvas.dom.overlay;
+       this.socket = new WebSocket("ws://localhost:9090/ws");
+       this.socket.onopen = this.socketOpen.bind(this);
+       this.socket.onmessage = this.socketMessage.bind(this);
+    }
 
-        if (result) {
-            if (result.boxes) {
-                drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
-                result.boxes.filter(function (box) {
-                    return box !== result.box;
-                }).forEach(function (box) {
-                    Quagga.ImageDebug.drawPath(box, {x: 0, y: 1}, drawingCtx, {color: "green", lineWidth: 2});
-                });
+    socketOpen() {
+        this.socket.send(JSON.stringify({
+            type: 0,
+            data: {
+                cmd: 0,
+                data: null
             }
+        }));
+    }
 
-            if (result.box) {
-                Quagga.ImageDebug.drawPath(result.box, {x: 0, y: 1}, drawingCtx, {color: "#00F", lineWidth: 2});
-            }
-
-            if (result.codeResult && result.codeResult.code) {
-                Quagga.ImageDebug.drawPath(result.line, {x: 'x', y: 'y'}, drawingCtx, {color: 'red', lineWidth: 3});
-                console.log(result.codeResult.code);
+    socketMessage(msg) {
+        let data = null
+        try {
+            data = JSON.parse(msg.data);
+        } catch(e) {
+            if (e instanceof SyntaxError) {
+                this.socket.close();
+                return;
             }
         }
-});
+        if (!(data.hasOwnProperty('type') && data.hasOwnProperty('data'))) {
+            this.socket.close();
+            return;
+        }
+        if (data.type === 1) {
+            this.handleBarcodeData(data.data);
+        }
+    }
+
+    handleBarcodeData(data) {
+        if (!(data.hasOwnProperty('img') && data.hasOwnProperty('codes'))) {
+            this.socket.close();
+            return;
+        }
+        const canvas = this.scanDisp.current;
+        const ctx = canvas.getContext("2d");
+        const img = new Image();
+        img.src = "data:image/gif;base64," + data.img;
+        img.onload = () => {
+            const imgWidth = img.naturalWidth;
+            const imgHeight = img.naturalHeight;
+            const canvasWidth = canvas.offsetWidth;
+            const canvasHeight = canvas.offsetHeight;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            let scaleX = 1;
+            if (imgWidth > canvasWidth) {
+                scaleX = canvasWidth/imgWidth;
+            }
+            let scaleY = 1;
+            if (imgHeight > canvasHeight) {
+                scaleY = canvasHeight/imgHeight;
+            }
+            let scale = scaleY;
+            if (scaleX < scaleY) {
+                scale = scaleX;
+            }
+            console.log(imgWidth, imgHeight, canvasWidth, canvasHeight, scaleX, scaleY, scale, imgWidth*scale, imgHeight*scale);
+
+            ctx.drawImage(img, 0, 0,imgWidth*scale, imgHeight*scale);
+        }
     }
 
     render() {
         return <div id="ScanBarcode">
-            <div id="interactive" className="viewport"></div>
+            <canvas ref={this.scanDisp}/>
             <div>
 
             </div>
