@@ -1,6 +1,7 @@
 #ScanBarcode {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: auto 1fr;
   align-items: center;
 
   position: absolute;
@@ -9,8 +10,11 @@
   left: 0;
   right: 0;
 
+  > .top {
+    grid-column: span 2;
+  }
+
   canvas {
-    height: 100%;
     width: 100%;
   }
 }

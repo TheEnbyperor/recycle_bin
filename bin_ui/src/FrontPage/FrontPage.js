@@ -8,12 +8,12 @@ export default class FrontPage extends Component {
         super(props);
 
         this.state = {
-            mode: null
+            mode: 0
         }
     }
 
     render() {
-        if (this.state.mode === null) {
+        if (this.state.mode === 0) {
             return <div id="FrontPage">
                 <div onClick={() => this.setState({mode: 1})}>
                     <i className="fas fa-barcode"/>
@@ -25,7 +25,7 @@ export default class FrontPage extends Component {
                 </div>
             </div>;
         } else if (this.state.mode === 1) {
-            return <ScanBarcode/>
+            return <ScanBarcode onBack={() => this.setState({mode: 0})}/>
         }
     }
 }

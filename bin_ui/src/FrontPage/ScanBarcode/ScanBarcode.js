@@ -1,8 +1,9 @@
 import React, {Component} from 'react';
+import {SocketContext} from '../../App';
 
 import './ScanBarcode.scss';
 
-export default class ScanBarcode extends Component {
+class ScanBarcode extends Component {
     constructor(props) {
         super(props);
 
@@ -10,13 +11,8 @@ export default class ScanBarcode extends Component {
     }
 
     componentDidMount() {
-       this.socket = new WebSocket("ws://localhost:9090/ws");
-       this.socket.onopen = this.socketOpen.bind(this);
-       this.socket.onmessage = this.socketMessage.bind(this);
-    }
-
-    socketOpen() {
-        this.socket.send(JSON.stringify({
+        this.props.socket.addCallback(this.handleBarcodeData.bind(this), 1);
+        this.props.socket.socket.send(JSON.stringify({
             type: 0,
             data: {
                 cmd: 0,
@@ -25,61 +21,50 @@ export default class ScanBarcode extends Component {
         }));
     }
 
-    socketMessage(msg) {
-        let data = null
-        try {
-            data = JSON.parse(msg.data);
-        } catch(e) {
-            if (e instanceof SyntaxError) {
-                this.socket.close();
-                return;
+    componentWillUnmount() {
+        this.props.socket.removeCallback(this.handleBarcodeData.bind(this), 1);
+        this.props.socket.socket.send(JSON.stringify({
+            type: 0,
+            data: {
+                cmd: 1,
+                data: null
             }
-        }
-        if (!(data.hasOwnProperty('type') && data.hasOwnProperty('data'))) {
-            this.socket.close();
-            return;
-        }
-        if (data.type === 1) {
-            this.handleBarcodeData(data.data);
-        }
+        }));
     }
 
     handleBarcodeData(data) {
-        if (!(data.hasOwnProperty('img') && data.hasOwnProperty('codes'))) {
-            this.socket.close();
-            return;
-        }
         const canvas = this.scanDisp.current;
-        const ctx = canvas.getContext("2d");
-        const img = new Image();
-        img.src = "data:image/gif;base64," + data.img;
-        img.onload = () => {
-            const imgWidth = img.naturalWidth;
-            const imgHeight = img.naturalHeight;
-            const canvasWidth = canvas.offsetWidth;
-            const canvasHeight = canvas.offsetHeight;
-            canvas.width = canvasWidth;
-            canvas.height = canvasHeight;
-            let scaleX = 1;
-            if (imgWidth > canvasWidth) {
-                scaleX = canvasWidth/imgWidth;
-            }
-            let scaleY = 1;
-            if (imgHeight > canvasHeight) {
-                scaleY = canvasHeight/imgHeight;
-            }
-            let scale = scaleY;
-            if (scaleX < scaleY) {
-                scale = scaleX;
-            }
-            console.log(imgWidth, imgHeight, canvasWidth, canvasHeight, scaleX, scaleY, scale, imgWidth*scale, imgHeight*scale);
+        if (canvas !== null) {
+            const ctx = canvas.getContext("2d");
+            const img = new Image();
+            img.src = "data:image/gif;base64," + data;
+            img.onload = () => {
+                const imgWidth = img.naturalWidth;
+                const imgHeight = img.naturalHeight;
+                const canvasWidth = canvas.offsetWidth;
+                let scaleX = 1;
+                if (imgWidth > canvasWidth) {
+                    scaleX = canvasWidth / imgWidth;
+                }
+                let scaleY = 1;
+                let scale = scaleY;
+                if (scaleX < scaleY) {
+                    scale = scaleX;
+                }
+                canvas.width = imgWidth * scale;
+                canvas.height = imgHeight * scale;
 
-            ctx.drawImage(img, 0, 0,imgWidth*scale, imgHeight*scale);
+                ctx.drawImage(img, 0, 0, imgWidth * scale, imgHeight * scale);
+            }
         }
     }
 
     render() {
         return <div id="ScanBarcode">
+            <div className="top">
+                <img src="/material-design-icons/navigation/svg/production/ic_arrow_back_48px.svg" alt=""
+                     onClick={this.props.onBack}/>
+            </div>
             <canvas ref={this.scanDisp}/>
             <div>
 
@@ -87,3 +72,9 @@ export default class ScanBarcode extends Component {
         </div>;
     }
 }
+
+export default React.forwardRef((props, ref) => (
+    <SocketContext.Consumer>
+        {value => <ScanBarcode socket={value} ref={ref} {...props}/>}
+    </SocketContext.Consumer>
+))
