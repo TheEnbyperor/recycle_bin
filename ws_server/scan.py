@@ -8,32 +8,31 @@ import numpy as np
 
 
 class BarcodeScanner:
-    def __init__(self, cam):
+    def __init__(self, cam, exit_event: threading.Event):
         self._cam = cam
-        self._thread_exit = False
+        self._thread_exit = exit_event
         self._scan_queue = queue.Queue()
         self._code_queues = set()
         self._img_queues = set()
         self._scanner = zbar.Scanner()
-        self._detect_t = threading.Thread(target=self.fill_cam_queue)
+        self._detect_t = threading.Thread(target=self.fill_cam_queue, daemon=True)
 
-    def add_cam_queue(self, q):
+    def add_code_queue(self, q):
         self._code_queues.add(q)
 
     def add_img_queue(self, q):
-        self._code_queues.add(q)
+        self._img_queues.add(q)
 
-    def remove_cam_queue(self, q):
-        self._code_queues.remove(q)
+    def remove_code_queue(self, q):
+        if q in self._code_queues:
+            self._code_queues.remove(q)
 
     def remove_img_queue(self, q):
-        self._code_queues.remove(q)
+        if q in self._img_queues:
+            self._img_queues.remove(q)
 
     def start(self):
         self._detect_t.start()
-
-    def stop(self):
-        self._thread_exit = True
 
     @staticmethod
     def _rotatePoint(pt, mat):
@@ -56,9 +55,7 @@ class BarcodeScanner:
         return newWidth, newHeight
 
     def scan_thread(self):
-        while True:
-            if self._thread_exit:
-                break
+        while not self._thread_exit.is_set():
             if not self._scan_queue.empty():
                 frame = self._scan_queue.get()
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -103,9 +100,7 @@ class BarcodeScanner:
             return rotImage, rect, 0
 
     def fill_cam_queue(self):
-        while True:
-            if self._thread_exit:
-                break
+        while not self._thread_exit.is_set():
             ret, frame = self._cam.read()
             if not ret:
                 break

@@ -28,6 +28,7 @@ def make_app():
     ])
 
 
+
 if __name__ == "__main__":
     t = threading.Thread(target=fill_cam_queue, args=(cap,))
     t.start()
