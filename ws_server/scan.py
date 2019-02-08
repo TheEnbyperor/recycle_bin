@@ -4,6 +4,7 @@ import queue
 import zbar
 import imutils
 import threading
+import logging
 import numpy as np
 
 
@@ -16,6 +17,7 @@ class BarcodeScanner:
         self._img_queues = set()
         self._scanner = zbar.Scanner()
         self._detect_t = threading.Thread(target=self.fill_cam_queue, daemon=True)
+        self._logger = logging.getLogger(__name__)
 
     def add_code_queue(self, q):
         self._code_queues.add(q)
@@ -32,6 +34,7 @@ class BarcodeScanner:
             self._img_queues.remove(q)
 
     def start(self):
+        self._logger.info("Barcode scanning thread starting")
         self._detect_t.start()
 
     @staticmethod
@@ -65,7 +68,9 @@ class BarcodeScanner:
                     try:
                         data = result.data.decode()
                     except UnicodeDecodeError:
+                        self._logger.warning(f"Unable to debug barcode with raw data {result.data!r}")
                         continue
+                    self._logger.debug(f"Scanned barcode with data {data!r}")
                     for q in self._code_queues:
                         q.put(data)
 
@@ -122,8 +127,10 @@ class BarcodeScanner:
                 cv2.drawContours(frame, [box], 0, (0, 0, 255), 2)
 
                 if rotImage.size != 0:
+                    self._logger.debug("Detected possible barcode")
                     self._scan_queue.put(rotImage)
 
             data = cv2.imencode('.jpg', frame)[1].tostring()
             for q in self._img_queues:
                 q.put(data)
+        self._logger.info("Barcode scanning thread exiting")
