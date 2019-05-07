@@ -35,7 +35,7 @@ def service_signal(signum, _):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     signal.signal(signal.SIGTERM, service_signal)
     signal.signal(signal.SIGINT, service_signal)
