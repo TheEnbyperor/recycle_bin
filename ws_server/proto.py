@@ -1,11 +1,14 @@
 import enum
 
 
-class MsgType(enum.Enum):
+@enum.unique
+class MsgType(enum.IntEnum):
     COMMAND = 0
-    BARCODE_DATA = 1
+    BARCODE_IMG = 1
+    BARCODE_DATA = 2
 
 
-class CmdType(enum.Enum):
+@enum.unique
+class CmdType(enum.IntEnum):
     START_BARCODE = 0
     STOP_BARCODE = 1
