@@ -29,6 +29,7 @@ class App extends Component {
     }
 
     socketClose() {
+        console.warn("Socket closed, reopening");
         this.setState({
             socketOpen: false
         });
@@ -44,11 +45,15 @@ class App extends Component {
             data = JSON.parse(msg.data);
         } catch (e) {
             if (e instanceof SyntaxError) {
+                console.error("Invalid JSON syntax received from server");
                 this.socket.close();
                 return;
+            } else {
+                throw e;
             }
         }
         if (!(data.hasOwnProperty('type') && data.hasOwnProperty('data'))) {
+            console.error("Invalid data structure received from server");
             this.socket.close();
             return;
         }
