@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 
 import './FrontPage.scss';
-import ScanBarcode from "./ScanBarcode/ScanBarcode";
+import ScanBarcode from "../ScanBarcode/ScanBarcode";
 
 export default class FrontPage extends Component {
     constructor(props) {

@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
-import {SocketContext} from '../../App';
-
+import {SocketContext} from '../App';
+import Loader from "../loader.svg";
 import './ScanBarcode.scss';
 
 class ScanBarcode extends Component {
@@ -8,29 +8,32 @@ class ScanBarcode extends Component {
         super(props);
 
         this.scanDisp = React.createRef();
+        this.handleBarcodeData = this.handleBarcodeData.bind(this);
+        this.handleBarcodeCode = this.handleBarcodeCode.bind(this);
+
+        this.state = {
+            currentStatus: "Looking for barcode..."
+        }
     }
 
     componentDidMount() {
-        this.props.socket.addCallback(this.handleBarcodeData.bind(this), 1);
-        this.props.socket.socket.send(JSON.stringify({
-            type: 0,
-            data: {
-                cmd: 0,
-                data: null
-            }
-        }));
+        this.props.socket.addCallback(this.handleBarcodeData, 1);
+        this.props.socket.addCallback(this.handleBarcodeCode, 2);
+        this.props.socket.sendMessage(0, {
+            cmd: 0,
+            data: null
+        });
     }
 
     componentWillUnmount() {
-        this.props.socket.removeCallback(this.handleBarcodeData.bind(this), 1);
-        this.props.socket.socket.send(JSON.stringify({
-            type: 0,
-            data: {
-                cmd: 1,
-                data: null
-            }
-        }));
-    }
+        this.props.socket.removeCallback(this.handleBarcodeData, 1);
+        this.props.socket.removeCallback(this.handleBarcodeCode, 2);
+        this.props.socket.sendMessage(0, {
+            cmd: 1,
+            data: null
+        });
+    };
+
 
     handleBarcodeData(data) {
         const canvas = this.scanDisp.current;
@@ -59,6 +62,17 @@ class ScanBarcode extends Component {
         }
     }
 
+    handleBarcodeCode(data) {
+        console.log(data);
+        this.props.socket.sendMessage(0, {
+            cmd: 1,
+            data: null
+        });
+        this.setState({
+            currentStatus: "Looking up product..."
+        })
+    }
+
     render() {
         return <div id="ScanBarcode">
             <div className="top">
@@ -67,7 +81,9 @@ class ScanBarcode extends Component {
             </div>
             <canvas ref={this.scanDisp}/>
             <div>
-
+                <h1>Present the barcode to the camera</h1>
+                <h3>{this.state.currentStatus}</h3>
+                <object data={Loader} type="image/svg+xml"/>
             </div>
         </div>;
     }

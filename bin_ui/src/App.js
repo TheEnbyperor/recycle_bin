@@ -39,6 +39,13 @@ class App extends Component {
         this.socket.onmessage = this.socketMessage.bind(this);
     }
 
+    sendMessage(type, data) {
+        this.socket.send(JSON.stringify({
+            type: type,
+            data: data
+        }));
+    }
+
     socketMessage(msg) {
         let data = null;
         try {
@@ -85,7 +92,7 @@ class App extends Component {
         if (this.state.socketOpen) {
             return (
                 <SocketContext.Provider value={{
-                    socket: this.socket,
+                    sendMessage: this.sendMessage.bind(this),
                     addCallback: this.addSocketCallback.bind(this),
                     removeCallback: this.removeSocketCallback.bind(this),
                 }}>
