@@ -6,6 +6,8 @@ class MsgType(enum.IntEnum):
     COMMAND = 0
     BARCODE_IMG = 1
     BARCODE_DATA = 2
+    LOOKUP_ERROR = 3
+    LOOKUP_SUCCESS = 4
 
 
 @enum.unique
