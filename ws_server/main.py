@@ -6,21 +6,24 @@ import logging
 import scan
 import ws_handler
 import gql_client
+import config
+import argparse
 
 
-def get_cam():
-    cap = cv2.VideoCapture(0)
+def get_cam(cam_id):
+    cap = cv2.VideoCapture(cam_id)
     cap.set(3, 800)
     cap.set(4, 600)
     cap.set(5, 10)
     return cap
 
 
-def make_app(scanner, thread_exit):
+def make_app(scanner, thread_exit, config):
     return tornado.web.Application([
         (r'/ws', ws_handler.SocketHandler, {
             "scanner": scanner,
-            "exit_event": thread_exit
+            "exit_event": thread_exit,
+            "config": config
         }),
     ])
 
@@ -35,17 +38,26 @@ def service_signal(signum, _):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    parser = argparse.ArgumentParser(description='WebSocket server for recycle bin')
+    parser.add_argument('--cam', metavar='N', type=int, default=0,
+                        help='Numerical ID of the camera to use as in /dev/video*')
+    parser.add_argument('--debug', action='store_true', help='Print debug messages')
+    parser.add_argument('--server', default="http://localhost:8000/graphl", help='GraphQL endpoint to query against')
+    parser.add_argument('--config', default="config.db", help='Location of configuration database')
+    args = parser.parse_args()
+
+    logging.basicConfig(level=(logging.DEBUG if args.debug else logging.INFO))
     logger = logging.getLogger(__name__)
     signal.signal(signal.SIGTERM, service_signal)
     signal.signal(signal.SIGINT, service_signal)
     logger.info("Starting...")
 
-    cam = get_cam()
+    config = config.Config(args.config)
+    cam = get_cam(args.cam)
     thread_exit = threading.Event()
     scanner = scan.BarcodeScanner(cam, thread_exit)
-    gql_client = gql_client.GQLClient("http://localhost:8000/graphl")
-    app = make_app(scanner, thread_exit)
+    gql_client = gql_client.GQLClient(args.server)
+    app = make_app(scanner, thread_exit, config)
     app.listen(9090)
 
     try:
@@ -60,4 +72,5 @@ if __name__ == "__main__":
                 t.join()
 
     logger.info("Exiting")
+    del config
 
