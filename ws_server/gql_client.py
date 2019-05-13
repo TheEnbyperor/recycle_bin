@@ -3,10 +3,8 @@ import logging
 
 
 class GQLError(Exception):
-    def __init__(self, message, errors):
+    def __init__(self, message):
         super().__init__(message)
-
-        self.errors = errors
 
 
 class GQLClient:
@@ -16,7 +14,7 @@ class GQLClient:
 
     def query(self, query: str, variables: dict):
         try:
-            logging.info(f"Making graphql request to {self._endpoint}")
+            self._logger.info(f"Making graphql request to {self._endpoint}")
             data = {
                 "query": query,
                 "variables": variables
@@ -27,23 +25,23 @@ class GQLClient:
                 requests.exceptions.ChunkedEncodingError, requests.exceptions.ContentDecodingError,
                 requests.exceptions.StreamConsumedError, requests.exceptions.RetryError,
                 requests.exceptions.UnrewindableBodyError) as e:
-            self._logger.error(f"GraphQL request error: {e}")
-            raise GQLError(e.message, [])
+            self._logger.warning(f"GraphQL request error: {e}")
+            raise GQLError(e.message)
         if resp.status_code != requests.codes.ok:
-            self._logger.error(f"GraphQL request returned status code {resp.status_code}")
-            raise GQLError(f"{resp.status_code} error", [])
+            self._logger.warning(f"GraphQL request returned status code {resp.status_code}")
+            raise GQLError(f"{resp.status_code} error")
         self._logger.debug(f"GraphQL request returned {resp.content!r}")
         try:
             data = resp.json()
         except ValueError:
-            self._logger.error(f"GraphQL request returned invalid JSON")
-            raise GQLError("Error in decoding JSON", [])
-        data = data.get("data")
+            self._logger.warning(f"GraphQL request returned invalid JSON")
+            raise GQLError("Error in decoding JSON")
+        self._logger.debug(f"GraphQL request returned {data!r} decoded as JSON")
         errors = data.get("errors")
-        if data is None:
-            self._logger.error("GraphQL request didn't return data")
-            raise GQLError("Invalid data in response", [])
+        resp_data = data.get("data")
+        if resp_data is None:
+            self._logger.warning("GraphQL request didn't return data")
+            raise GQLError("Invalid data in response")
         if errors is not None and len(errors) > 0:
-            self._logger.error(f"GraphQL request returned GraphQL errors: {errors!r}")
-            raise GQLError("Error encountered from server", errors)
+            self._logger.warning(f"GraphQL request returned GraphQL errors: {errors!r}")
         return data
