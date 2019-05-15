@@ -9,6 +9,7 @@ import time
 import proto
 import scan
 import config
+import lights
 import gql_client
 
 
@@ -26,14 +27,17 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
     _code_queue: queue.Queue
     _code_fetch_queue: queue.LifoQueue
     _gql_client: gql_client.GQLClient
+    _lights: lights.LightingController
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, scanner: scan.BarcodeScanner, exit_event: threading.Event, config: config.Config):
+    def initialize(self, scanner: scan.BarcodeScanner, exit_event: threading.Event, config: config.Config,
+                   lighting_controller: lights.LightingController):
         self._logger = logging.getLogger(__name__)
         server_loop = tornado.ioloop.IOLoop.current()
         self._config = config
+        self._lights = lighting_controller
         self._thread_exit = exit_event
         self._barcode_running = False
         self._thread_exit_self = threading.Event()

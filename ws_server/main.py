@@ -7,6 +7,7 @@ import scan
 import ws_handler
 import gql_client
 import config
+import lights
 import argparse
 
 
@@ -18,12 +19,13 @@ def get_cam(cam_id):
     return cap
 
 
-def make_app(scanner, thread_exit, config):
+def make_app(scanner, thread_exit, config, lighting_controller):
     return tornado.web.Application([
         (r'/ws', ws_handler.SocketHandler, {
             "scanner": scanner,
             "exit_event": thread_exit,
-            "config": config
+            "config": config,
+            "lighting_controller": lighting_controller,
         }),
     ])
 
@@ -57,7 +59,8 @@ if __name__ == "__main__":
     thread_exit = threading.Event()
     scanner = scan.BarcodeScanner(cam, thread_exit)
     gql_client = gql_client.GQLClient(args.server)
-    app = make_app(scanner, thread_exit, config)
+    lighting_controller = lights.LightingController(config)
+    app = make_app(scanner, thread_exit, config, lighting_controller)
     app.listen(9090, "127.0.0.1")
     app.listen(9090, "::1")
 
