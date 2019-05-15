@@ -8,7 +8,70 @@ class SortProduct extends Component {
 
         this.state = {
             curPart: 0,
-        }
+        };
+
+        this.nextPart = this.nextPart.bind(this);
+        this.prevPart = this.prevPart.bind(this);
+        this.complete = this.complete.bind(this);
+    }
+
+    componentDidMount() {
+        this.props.socket.sendMessage(0, {
+            cmd: 4,
+            data: null
+        });
+
+        const curPart = this.props.product.productpartSet.edges[this.state.curPart].node;
+        this.props.socket.sendMessage(0, {
+            cmd: 2,
+            data: curPart.material.bin.id
+        });
+    }
+
+    nextPart() {
+        const curPart = this.props.product.productpartSet.edges[this.state.curPart].node;
+        const nextId = this.state.curPart + 1;
+        const nextPart = this.props.product.productpartSet.edges[nextId].node;
+
+        this.props.socket.sendMessage(0, {
+            cmd: 3,
+            data: curPart.material.bin.id
+        });
+        this.props.socket.sendMessage(0, {
+            cmd: 2,
+            data: nextPart.material.bin.id
+        });
+
+        this.setState({
+            curPart: nextId
+        });
+    }
+
+    prevPart() {
+        const curPart = this.props.product.productpartSet.edges[this.state.curPart].node;
+        const prevId = this.state.curPart - 1;
+        const prevPart = this.props.product.productpartSet.edges[prevId].node;
+
+        this.props.socket.sendMessage(0, {
+            cmd: 3,
+            data: curPart.material.bin.id
+        });
+        this.props.socket.sendMessage(0, {
+            cmd: 2,
+            data: prevPart.material.bin.id
+        });
+
+        this.setState({
+            curPart: prevId
+        })
+    }
+
+    complete() {
+        this.props.socket.sendMessage(0, {
+            cmd: 4,
+            data: null
+        });
+        this.props.onBack();
     }
 
     render() {
@@ -28,10 +91,10 @@ class SortProduct extends Component {
             </div>
             <div className="buttons">
                 {isPrevious ?
-                    <button onClick={() => this.setState({curPart: this.state.curPart - 1})}>Previous</button>
+                    <button onClick={this.prevPart}>Previous</button>
                     : <div/>}
-                {isNext ? <button onClick={() => this.setState({curPart: this.state.curPart + 1})}>Next</button>
-                    : <button onClick={this.props.onBack}>Done</button>}
+                {isNext ? <button onClick={this.nextPart}>Next</button>
+                    : <button onClick={this.complete}>Done</button>}
             </div>
         </div>;
     }
