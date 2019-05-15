@@ -47,12 +47,12 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             threading.Thread(target=self.barcode_code_thread_f, args=(server_loop,), daemon=True)
         self._code_fetch_thread =\
             threading.Thread(target=self.code_fetch_thread_f, args=(server_loop,), daemon=True)
-        self._barcode_thread.start()
-        self._barcode_code_thread.start()
-        self._code_fetch_thread.start()
         self._img_queue = queue.LifoQueue(maxsize=10)
         self._code_queue = queue.Queue(maxsize=3)
         self._code_fetch_queue = queue.LifoQueue(maxsize=3)
+        self._barcode_thread.start()
+        self._barcode_code_thread.start()
+        self._code_fetch_thread.start()
         self._gql_client = gql_client.GQLClient("http://localhost:8000/graphql/")
 
     def check_origin(self, origin):
