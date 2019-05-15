@@ -5,12 +5,15 @@ import json
 import queue
 import base64
 import logging
+import time
 import proto
 import scan
+import config
 import gql_client
 
 
 class SocketHandler(tornado.websocket.WebSocketHandler):
+    _config: config.Config
     _logger: logging.Logger
     _thread_exit: threading.Event
     _thread_exit_self: threading.Event
@@ -27,9 +30,10 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, scanner: scan.BarcodeScanner, exit_event: threading.Event):
+    def initialize(self, scanner: scan.BarcodeScanner, exit_event: threading.Event, config: config.Config):
         self._logger = logging.getLogger(__name__)
         server_loop = tornado.ioloop.IOLoop.current()
+        self._config = config
         self._thread_exit = exit_event
         self._barcode_running = False
         self._thread_exit_self = threading.Event()
@@ -78,7 +82,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         await self.handle_message(msg_data["type"], msg_data["data"])
 
     async def handle_message(self, msg_type: int, data):
-        if msg_type == proto.MsgType.COMMAND:
+        if msg_type == proto.MsgType.COMMAND.value:
             if not all(k in data.keys() for k in ("cmd", "data")):
                 self._logger.warning("Invalid data structure received from client, closing socket")
                 self.close()
@@ -89,11 +93,11 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             self.close()
 
     async def handle_command(self, cmd: int, data):
-        if cmd == proto.CmdType.START_BARCODE:
+        if cmd == proto.CmdType.START_BARCODE.value:
             self._barcode_running = True
             self._scanner.add_img_queue(self._img_queue)
             self._scanner.add_code_queue(self._code_queue)
-        elif cmd == proto.CmdType.STOP_BARCODE:
+        elif cmd == proto.CmdType.STOP_BARCODE.value:
             self._barcode_running = False
             self._scanner.remove_img_queue(self._img_queue)
             self._scanner.remove_code_queue(self._code_queue)
@@ -152,45 +156,56 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
             try:
                 data = self._code_fetch_queue.get_nowait()
 
-                    try:
-                        data = self._gql_client.query("""
-                        query($barcode: String!) {
-                            product(barcode: $barcode) {
-                                id
+                try:
+                    data = self._gql_client.query("""
+                    query($barcode: String!, $authority: ID!) {
+                        product(barcode: $barcode) {
+                            id
+                            name
+                            brand {
                                 name
-                                brand {
-                                    name
-                                }
-                                productpartSet {
-                                    id
-                                    name
-                                    material {
+                            }
+                            productpartSet {
+                                edges {
+                                    cursor
+                                    node {
                                         id
+                                        name
+                                        material {
+                                            id
+                                            name
+                                            bin(authority: $authority) {
+                                              id
+                                              name
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
-                        """, {
-                            "barcode": data
-                        })
-                        product = data["data"].get("product")
-                        if product is None:
-                            server_loop.add_callback(self.write_message_safe, {
-                                "type": proto.MsgType.LOOKUP_ERROR,
-                                "data": "Product not recognised"
-                            })
-                        else:
-                            print(product)
-                            server_loop.add_callback(self.write_message_safe, {
-                                "type": proto.MsgType.LOOKUP_SUCCESS,
-                                "data": product
-                            })
-                    except gql_client.GQLError as e:
-                        self._logger.error(f"Error encountered when looking up barcode is database: {str(e)}")
+                    }
+                    """, {
+                        "barcode": data,
+                        "authority": self._config.local_authority
+                    })
+                    product = data["data"].get("product")
+                    if product is None:
                         server_loop.add_callback(self.write_message_safe, {
                             "type": proto.MsgType.LOOKUP_ERROR,
-                            "data": "Unable to contact server"
+                            "data": "Product not recognised"
                         })
+                    else:
+                        print(product)
+                        server_loop.add_callback(self.write_message_safe, {
+                            "type": proto.MsgType.LOOKUP_SUCCESS,
+                            "data": product
+                        })
+                except gql_client.GQLError as e:
+                    self._logger.error(f"Error encountered when looking up barcode is database: {str(e)}")
+                    server_loop.add_callback(self.write_message_safe, {
+                        "type": proto.MsgType.LOOKUP_ERROR,
+                        "data": "Unable to contact server. Please try again..."
+                    })
 
                 self._code_fetch_queue.task_done()
             except queue.Empty:
