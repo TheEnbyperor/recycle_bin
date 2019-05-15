@@ -14,3 +14,6 @@ class MsgType(enum.IntEnum):
 class CmdType(enum.IntEnum):
     START_BARCODE = 0
     STOP_BARCODE = 1
+    COMP_ON = 2
+    COMP_OFF = 3
+    COMP_RESET = 4

@@ -98,16 +98,32 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
     async def handle_command(self, cmd: int, data):
         if cmd == proto.CmdType.START_BARCODE.value:
+            self._logger.info("Start barcode decoding")
             self._barcode_running = True
             self._scanner.add_img_queue(self._img_queue)
             self._scanner.add_code_queue(self._code_queue)
         elif cmd == proto.CmdType.STOP_BARCODE.value:
+            self._logger.info("Stopping barcode decoding")
             self._barcode_running = False
             self._scanner.remove_img_queue(self._img_queue)
             self._scanner.remove_code_queue(self._code_queue)
+        elif cmd == proto.CmdType.COMP_ON.value:
+            self.handle_set_light(str(data), True)
+        elif cmd == proto.CmdType.COMP_OFF.value:
+            self.handle_set_light(str(data), False)
+        elif cmd == proto.CmdType.COMP_RESET.value:
+            self._logger.info("Resetting compartment indicators")
+            self._lights.reset()
         else:
             self._logger.warning("Unrecognised command received, closing socket")
             self.close()
+
+    def handle_set_light(self, data: str, state: bool):
+        self._logger.info(f"Setting compartment {data} {'On' if state else 'Off'}")
+        comp = self._lights.get_compartment(data)
+        if comp is None:
+            return
+        comp.set_state(255 if state else 0)
 
     def write_message_safe(self, *args, **kwargs):
         try:
