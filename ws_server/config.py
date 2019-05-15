@@ -56,10 +56,6 @@ class Config:
 
     def get_compartment(self, comp_id: str):
         val = self._db.get(f"comp_{comp_id}")
-        try:
-            val = val.decode()
-        except UnicodeDecodeError:
-            return None
         return CompartmentConfig.decode_config(val)
 
     def __del__(self):
