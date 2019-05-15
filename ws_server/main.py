@@ -3,6 +3,7 @@ import tornado.web
 import threading
 import signal
 import logging
+import argparse
 import scan
 import ws_handler
 import gql_client
@@ -54,6 +55,11 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     signal.signal(signal.SIGTERM, service_signal)
     signal.signal(signal.SIGINT, service_signal)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--cam", help="The camera ID to use", type=int, default=0)
+    args = parser.parse_args()
+
     logger.info("Starting...")
 
     config = config.Config(args.config)
