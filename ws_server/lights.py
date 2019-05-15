@@ -12,11 +12,10 @@ class LocalLightingDevice(LightingDevice):
     def __init__(self, pwm, channel):
         self._pwm = pwm
         self._pwm_chan = channel
-        self._logger = logging.getLogger(__name__)
 
     def set_state(self, intensity):
         intensity &= 0xFF
-        self._logger.debug(f"Setting local light {self._pwm_chan} to {intensity}")
+        logging.debug(f"Setting local light {self._pwm_chan} to {intensity}")
         intensity = (intensity * 16) - 1
         if intensity < 0:
             intensity = 0
@@ -25,16 +24,19 @@ class LocalLightingDevice(LightingDevice):
 
 class DummyPWM:
     def __init__(self):
-        self._logger = logging.getLogger(__name__)
+        pass
 
-    def set_pwm_freq(self, freq):
-        self._logger.debug(f"Dummy PWM freq set te {freq}")
+    @staticmethod
+    def set_pwm_freq(freq):
+        logging.debug(f"Dummy PWM freq set te {freq}")
 
-    def set_pwm(self, chan, on, off):
-        self._logger.debug(f"Dummy PWM chan {chan} set to {on}-{off}")
+    @staticmethod
+    def set_pwm(chan, on, off):
+        logging.debug(f"Dummy PWM chan {chan} set to {on}-{off}")
 
-    def set_all_pwm(self, chan, on, off):
-        self._logger.debug(f"Dummy PWM all set to {on}-{off}")
+    @staticmethod
+    def set_all_pwm(on, off):
+        logging.debug(f"Dummy PWM all set to {on}-{off}")
 
 
 class LightingController:
@@ -49,6 +51,7 @@ class LightingController:
     def get_compartment(self, comp_id):
         comp_config = self._config.get_compartment(comp_id)
         if comp_config is None:
+            logging.warn(f"No valid compartment config for {comp_id}")
             return None
         if comp_config.type == config.CompartmentConfig.CompartmentType.LOCAL:
             return LocalLightingDevice(self._pwm, comp_config.channel)

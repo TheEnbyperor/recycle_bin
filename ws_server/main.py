@@ -48,7 +48,9 @@ if __name__ == "__main__":
     parser.add_argument('--config', default="config.db", help='Location of configuration database')
     args = parser.parse_args()
 
-    logging.basicConfig(level=(logging.DEBUG if args.debug else logging.INFO))
+    logging.basicConfig(level=(logging.DEBUG if args.debug else logging.INFO),
+                        format='%(asctime)s %(module)-16s.%(funcName)-23s +%(lineno)-4s: %(levelname)-8s '
+                               '[%(process)-5d, %(thread)-14d] %(message)s')
     logger = logging.getLogger(__name__)
     signal.signal(signal.SIGTERM, service_signal)
     signal.signal(signal.SIGINT, service_signal)

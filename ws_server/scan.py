@@ -18,7 +18,6 @@ class BarcodeScanner:
         self._scanner = zbar.Scanner()
         self._detect_t = threading.Thread(target=self.fill_cam_queue, daemon=True)
         self._scan_t = threading.Thread(target=self.scan_tf, daemon=True)
-        self._logger = logging.getLogger(__name__)
 
     def add_code_queue(self, q):
         self._code_queues.add(q)
@@ -35,7 +34,7 @@ class BarcodeScanner:
             self._img_queues.remove(q)
 
     def start(self):
-        self._logger.info("Barcode scanning thread starting")
+        logging.info("Barcode scanning thread starting")
         self._detect_t.start()
         self._scan_t.start()
 
@@ -76,16 +75,16 @@ class BarcodeScanner:
                 try:
                     data = result.data.decode()
                 except UnicodeDecodeError:
-                    self._logger.warning(f"Unable to debug barcode with raw data {result.data!r}")
+                    logging.warning(f"Unable to debug barcode with raw data {result.data!r}")
                     continue
-                self._logger.info(f"Scanned barcode with data {data!r}")
+                logging.info(f"Scanned barcode with data {data!r}")
                 for q in copy.copy(self._code_queues):
                     try:
                         q.put_nowait(data)
                     except queue.Full:
                         pass
                 break
-        self._logger.info("Barcode decoding thread exiting")
+        logging.info("Barcode decoding thread exiting")
 
     def fill_cam_queue(self):
         i = 0
@@ -109,4 +108,4 @@ class BarcodeScanner:
                     q.put_nowait(data)
                 except queue.Full:
                     pass
-        self._logger.info("Barcode scanning thread exiting")
+        logging.info("Barcode scanning thread exiting")
