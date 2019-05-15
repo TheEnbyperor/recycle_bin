@@ -13,6 +13,7 @@ import gql_client
 class SocketHandler(tornado.websocket.WebSocketHandler):
     _logger: logging.Logger
     _thread_exit: threading.Event
+    _thread_exit_self: threading.Event
     _scanner: scan.BarcodeScanner
     _barcode_running: bool
     _barcode_thread: threading.Thread
@@ -31,6 +32,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         server_loop = tornado.ioloop.IOLoop.current()
         self._thread_exit = exit_event
         self._barcode_running = False
+        self._thread_exit_self = threading.Event()
         self._scanner = scanner
         self._barcode_thread = threading.Thread(target=self.barcode_thread_f, args=(server_loop,), daemon=True)
         self._barcode_code_thread =\
@@ -54,6 +56,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
     def on_close(self):
         self._logger.info("Closing connection")
         self._barcode_running = False
+        self._thread_exit_self.set()
         self._scanner.remove_img_queue(self._img_queue)
         self._scanner.remove_code_queue(self._code_queue)
         self._code_queue.join()
@@ -106,7 +109,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
 
     def barcode_thread_f(self, server_loop):
         self._logger.info("Barcode image to client thread started")
-        while not self._thread_exit.is_set():
+        while not (self._thread_exit.is_set() or self._thread_exit_self.is_set()):
             if self._barcode_running:
                 try:
                     data = self._img_queue.get_nowait()
@@ -118,11 +121,13 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
                     self._img_queue.task_done()
                 except queue.Empty:
                     pass
+            else:
+                time.sleep(0.1)
         self._logger.info("Barcode image to client thread exiting")
 
     def barcode_code_thread_f(self, server_loop):
         self._logger.info("Barcode data to client thread started")
-        while not self._thread_exit.is_set():
+        while not (self._thread_exit.is_set() or self._thread_exit_self.is_set()):
             if self._barcode_running:
                 try:
                     data = self._code_queue.get_nowait()
@@ -137,14 +142,15 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
                     self._code_queue.task_done()
                 except queue.Empty:
                     pass
+            else:
+                time.sleep(0.1)
         self._logger.info("Barcode data to client thread exiting")
 
     def code_fetch_thread_f(self, server_loop):
         self._logger.info("Product lookup thread started")
-        while not self._thread_exit.is_set():
-            if self._barcode_running:
-                try:
-                    data = self._code_fetch_queue.get_nowait()
+        while not (self._thread_exit.is_set() or self._thread_exit_self.is_set()):
+            try:
+                data = self._code_fetch_queue.get_nowait()
 
                     try:
                         data = self._gql_client.query("""
@@ -186,8 +192,8 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
                             "data": "Unable to contact server"
                         })
 
-                    self._code_fetch_queue.task_done()
-                except queue.Empty:
-                    pass
+                self._code_fetch_queue.task_done()
+            except queue.Empty:
+                pass
         self._logger.info("Product lookup thread exiting")
 
