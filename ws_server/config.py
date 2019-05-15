@@ -3,7 +3,7 @@ import dbm.gnu
 
 class Config:
     def __init__(self, database):
-        self._db = dbm.gnu.open(database, 'c', 's')
+        self._db = dbm.gnu.open(database, 'cs')
 
     @property
     def local_authority(self):
