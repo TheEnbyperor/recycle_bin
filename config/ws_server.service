@@ -1,0 +1,13 @@
+[Unit]
+Description=WS Server
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/recycle_bin/ws_server/venv
+ExecStart=/opt/recycle_bin/ws_server/start.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

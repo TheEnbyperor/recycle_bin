@@ -1,0 +1,14 @@
+xset s off
+xset -dpms
+xset s noblank
+
+chromium-browser \
+    --no-first-run \
+    --disable-translate \
+    --disable-infobars \
+    --disable-suggestions-service \
+    --disable-save-password-bubble \
+    --start-maximized \
+    --incognito \
+    --noerrdialogs \
+    --kiosk "http://localhost" &
