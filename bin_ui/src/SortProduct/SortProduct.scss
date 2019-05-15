@@ -1,0 +1,21 @@
+#SortProduct {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+
+  position: absolute;
+  top: 0;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+
+  > div:not(.top) {
+    text-align: center;
+  }
+
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
