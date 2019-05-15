@@ -10,15 +10,23 @@ class ScanBarcode extends Component {
         this.scanDisp = React.createRef();
         this.handleBarcodeData = this.handleBarcodeData.bind(this);
         this.handleBarcodeCode = this.handleBarcodeCode.bind(this);
+        this.handleLookupError = this.handleLookupError.bind(this);
+        this.handleLookupSuccess = this.handleLookupSuccess.bind(this);
+        this.scanAnother = this.scanAnother.bind(this);
 
         this.state = {
-            currentStatus: "Looking for barcode..."
+            currentStatus: "Looking for barcode...",
+            currentError: null,
+            barcodeData: null,
+            product: null,
         }
     }
 
     componentDidMount() {
         this.props.socket.addCallback(this.handleBarcodeData, 1);
         this.props.socket.addCallback(this.handleBarcodeCode, 2);
+        this.props.socket.addCallback(this.handleLookupError, 3);
+        this.props.socket.addCallback(this.handleLookupSuccess, 4);
         this.props.socket.sendMessage(0, {
             cmd: 0,
             data: null
@@ -28,6 +36,8 @@ class ScanBarcode extends Component {
     componentWillUnmount() {
         this.props.socket.removeCallback(this.handleBarcodeData, 1);
         this.props.socket.removeCallback(this.handleBarcodeCode, 2);
+        this.props.socket.removeCallback(this.handleLookupError, 3);
+        this.props.socket.removeCallback(this.handleLookupSuccess, 4);
         this.props.socket.sendMessage(0, {
             cmd: 1,
             data: null
@@ -63,13 +73,48 @@ class ScanBarcode extends Component {
     }
 
     handleBarcodeCode(data) {
-        console.log(data);
         this.props.socket.sendMessage(0, {
             cmd: 1,
             data: null
         });
         this.setState({
-            currentStatus: "Looking up product..."
+            currentStatus: "Looking up product...",
+            currentError: null,
+            barcodeData: data,
+            product: null,
+        })
+    }
+
+    handleLookupError(data) {
+        this.props.socket.sendMessage(0, {
+            cmd: 0,
+            data: null
+        });
+        this.setState({
+            currentStatus: "Looking for barcode...",
+            currentError: data,
+            product: null,
+        })
+    }
+
+    handleLookupSuccess(data) {
+        this.setState({
+            currentStatus: "Found product!",
+            currentError: null,
+            product: data,
+        })
+    }
+
+    scanAnother() {
+        this.props.socket.sendMessage(0, {
+            cmd: 0,
+            data: null
+        });
+        this.setState({
+            currentStatus: "Looking for barcode...",
+            currentError: null,
+            barcodeData: null,
+            product: null,
         })
     }
 
@@ -81,9 +126,20 @@ class ScanBarcode extends Component {
             </div>
             <canvas ref={this.scanDisp}/>
             <div>
-                <h1>Present the barcode to the camera</h1>
-                <h3>{this.state.currentStatus}</h3>
-                <object data={Loader} type="image/svg+xml"/>
+                <h1>{this.state.currentStatus}</h1>
+                <h3 className="error">{this.state.currentError}</h3>
+                {(this.state.barcodeData === null) ? null : <h4>Barcode: {this.state.barcodeData}</h4>}
+                {(this.state.product === null) ?
+                    <object data={Loader} type="image/svg+xml">
+                        Loading
+                    </object>
+                    :
+                    <div className="product">
+                        <h2>{this.state.product.brand.name} {this.state.product.name}</h2>
+                        <button onClick={() => this.props.onScan(this.state.product)}>Continue</button>
+                        <button onClick={this.scanAnother}>Scan another</button>
+                    </div>
+                }
             </div>
         </div>;
     }

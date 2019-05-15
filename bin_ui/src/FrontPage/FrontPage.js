@@ -2,13 +2,15 @@ import React, {Component} from 'react';
 
 import './FrontPage.scss';
 import ScanBarcode from "../ScanBarcode/ScanBarcode";
+import SortProduct from "../SortProduct/SortProduct";
 
 export default class FrontPage extends Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            mode: 0
+            mode: 0,
+            product: null,
         }
     }
 
@@ -25,7 +27,10 @@ export default class FrontPage extends Component {
                 </div>
             </div>;
         } else if (this.state.mode === 1) {
-            return <ScanBarcode onBack={() => this.setState({mode: 0})}/>
+            return <ScanBarcode onBack={() => this.setState({mode: 0})}
+                                onScan={(product) => this.setState({mode: 2, product: product})}/>
+        } else if (this.state.mode === 2) {
+            return <SortProduct product={this.state.product} onBack={() => this.setState({mode: 0})}/>
         }
     }
 }
