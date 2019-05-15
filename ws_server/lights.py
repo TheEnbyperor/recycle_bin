@@ -16,7 +16,7 @@ class LocalLightingDevice(LightingDevice):
     def set_state(self, intensity):
         intensity &= 0xFF
         logging.debug(f"Setting local light {self._pwm_chan} to {intensity}")
-        intensity = (intensity * 16) - 1
+        intensity = round(intensity * 16.0588)
         if intensity < 0:
             intensity = 0
         self._pwm.set_pwm(self._pwm_chan, 0, intensity)
