@@ -58,7 +58,8 @@ if __name__ == "__main__":
     scanner = scan.BarcodeScanner(cam, thread_exit)
     gql_client = gql_client.GQLClient(args.server)
     app = make_app(scanner, thread_exit, config)
-    app.listen(9090)
+    app.listen(9090, "127.0.0.1")
+    app.listen(9090, "::1")
 
     try:
         scanner.start()
