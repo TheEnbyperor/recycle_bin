@@ -44,7 +44,7 @@ class LightingController:
         self._config = config
         try:
             self._pwm = Adafruit_PCA9685.PCA9685()
-        except FileNotFoundError:
+        except (FileNotFoundError, RuntimeError, PermissionError):
             self._pwm = DummyPWM()
         self._pwm.set_pwm_freq(200)
 
