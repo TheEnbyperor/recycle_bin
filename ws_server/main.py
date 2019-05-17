@@ -20,13 +20,14 @@ def get_cam(cam_id):
     return cap
 
 
-def make_app(scanner, thread_exit, config, lighting_controller):
+def make_app(scanner, thread_exit, config, lighting_controller, gql_client):
     return tornado.web.Application([
         (r'/ws', ws_handler.SocketHandler, {
             "scanner": scanner,
             "exit_event": thread_exit,
             "config": config,
             "lighting_controller": lighting_controller,
+            "gql_client": gql_client
         }),
     ])
 
@@ -45,7 +46,7 @@ if __name__ == "__main__":
     parser.add_argument('--cam', metavar='N', type=int, default=0,
                         help='Numerical ID of the camera to use as in /dev/video*')
     parser.add_argument('--debug', action='store_true', help='Print debug messages')
-    parser.add_argument('--server', default="http://localhost:8000/graphl", help='GraphQL endpoint to query against')
+    parser.add_argument('--server', default="http://localhost:8000/graphl", type=str, help='GraphQL endpoint to query against')
     parser.add_argument('--config', default="config.db", help='Location of configuration database')
     args = parser.parse_args()
 
@@ -56,10 +57,6 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, service_signal)
     signal.signal(signal.SIGINT, service_signal)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--cam", help="The camera ID to use", type=int, default=0)
-    args = parser.parse_args()
-
     logger.info("Starting...")
 
     config = config.Config(args.config)
@@ -68,7 +65,7 @@ if __name__ == "__main__":
     scanner = scan.BarcodeScanner(cam, thread_exit)
     gql_client = gql_client.GQLClient(args.server)
     lighting_controller = lights.LightingController(config)
-    app = make_app(scanner, thread_exit, config, lighting_controller)
+    app = make_app(scanner, thread_exit, config, lighting_controller, gql_client)
     app.listen(9090, "127.0.0.1")
     app.listen(9090, "::1")
 

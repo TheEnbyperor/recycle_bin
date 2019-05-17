@@ -32,7 +32,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         super().__init__(*args, **kwargs)
 
     def initialize(self, scanner: scan.BarcodeScanner, exit_event: threading.Event, config: config.Config,
-                   lighting_controller: lights.LightingController):
+                   lighting_controller: lights.LightingController, gql_client: gql_client.GQLClient):
         server_loop = tornado.ioloop.IOLoop.current()
         self._config = config
         self._lights = lighting_controller
@@ -51,7 +51,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         self._barcode_thread.start()
         self._barcode_code_thread.start()
         self._code_fetch_thread.start()
-        self._gql_client = gql_client.GQLClient("http://localhost:8000/graphql/")
+        self._gql_client = gql_client
 
     def check_origin(self, origin):
         return True
