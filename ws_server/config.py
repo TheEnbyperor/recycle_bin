@@ -33,8 +33,7 @@ class CompartmentConfig:
     def decode_config(cls, config: bytes):
         exp_len = struct.calcsize(cls._FORMAT)
         if len(config) != exp_len:
-            logging.warn(f"Invalid length on compartment config. "
-                                             f"Got {len(config)} bytes expected {exp_len} bytes")
+            logging.warn(f"Invalid length on compartment config. Got {len(config)} bytes expected {exp_len} bytes")
             return None
         comp_type, channel, dev_id = struct.unpack(cls._FORMAT, config)
         comp_type = cls.CompartmentType(comp_type)

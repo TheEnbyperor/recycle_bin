@@ -121,7 +121,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
         comp = self._lights.get_compartment(data)
         if comp is None:
             return
-        comp.set_state(255 if state else 0)
+        comp.set_state(127 if state else 0)
 
     def write_message_safe(self, *args, **kwargs):
         try:
@@ -219,7 +219,7 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
                             "data": product
                         })
                 except gql_client.GQLError as e:
-                    self._logger.error(f"Error encountered when looking up barcode is database: {str(e)}")
+                    logging.error(f"Error encountered when looking up barcode is database: {str(e)}")
                     server_loop.add_callback(self.write_message_safe, {
                         "type": proto.MsgType.LOOKUP_ERROR,
                         "data": "Unable to contact server. Please try again..."
