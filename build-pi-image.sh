@@ -32,9 +32,10 @@ sudo rm -rf root_system/opt/recycle_bin/ws_server
 sudo cp -a ws_server root_system/opt/recycle_bin/ws_server
 sudo chroot root_system /bin/bash <<EOF
 chown -R root:root /opt/recycle_bin/ws_server
-python3 -m pip install virtualenv
+chmod +x /opt/recycle_bin/ws_server/start.sh
+python3.7 -m pip install virtualenv
 cd /opt/recycle_bin/ws_server
-virtualenv venv --system-site-packages
+virtualenv venv --system-site-packages -p /usr/local/bin/python3.7
 source venv/bin/activate
 pip install -r requirements.txt
 EOF
