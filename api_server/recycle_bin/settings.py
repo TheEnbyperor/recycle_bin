@@ -25,7 +25,7 @@ SECRET_KEY = 'wh^-@6!avegqv^g*2f7ifnpd75z5b9oy&=71@&i=_a(v(hl1ja'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["172.30.0.13"]
+ALLOWED_HOSTS = ["172.30.0.13", "localhost", "recycle-bin.home.misell.cymru"]
 
 
 # Application definition
@@ -122,6 +122,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 GRAPHENE = {
     'SCHEMA': 'recycle_bin.schema.schema'
